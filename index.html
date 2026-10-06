@@ -181,6 +181,12 @@ table.entries{width:100%;border-collapse:collapse;min-width:760px}
 .dtable td:nth-child(3){white-space:nowrap}
 kbd{font-family:var(--cond);font-weight:700;font-size:14px;background:var(--panel2);border:1px solid var(--line2);border-bottom-width:2px;border-radius:4px;padding:0 7px;color:var(--gold-hi)}
 .credit{font-size:13px!important;color:var(--muted)!important;margin-top:28px!important}
+
+.limcell{white-space:nowrap}
+.limin{width:62px;padding:4px 6px;text-align:right;font-family:var(--cond);font-weight:600;font-size:16px;border-color:var(--gold-deep)!important}
+.limin:focus{border-color:var(--gold)!important}
+.limbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:-6px 0 18px;font-size:13px;color:var(--muted);flex-wrap:wrap}
+#limState.custom{color:var(--gold-hi)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
@@ -309,18 +315,20 @@ kbd{font-family:var(--cond);font-weight:700;font-size:14px;background:var(--pane
     <p>Game Pace replaces that with a single page where the reviewer watches the game, marks the end of a play and the R4P with the keyboard, and gets live averages that can be pasted straight into the review sheet. Every measurement is tied to a video timecode, so any number in the feedback can be checked by anyone with the link.</p>
 
     <h3 id="a-metrics">What is measured</h3>
-    <p>Each measurement is the elapsed time from the moment the play ends to the R4P signal for the next down. The reviewer classifies every measurement by the situation it follows. The limits below are the acceptable thresholds agreed for feedback; an average is shown in green when it is below the limit and in red when it is at or above it.</p>
+    <p>Each measurement is the elapsed time from the moment the play ends to the R4P signal for the next down. The reviewer classifies every measurement by the situation it follows. The limits below are the acceptable thresholds agreed for feedback; a measurement or average is shown in green when it is below its limit and in red when it is at or above it.</p>
+    <p><strong>The limits are editable.</strong> Change a value in the table and every measurement, average, color, clock warning and exported grade updates immediately, including reviews already in progress. Limits are saved in this browser, so if the criteria change officially, every supervisor needs to update their own copy (or the defaults can be changed in the code, see below).</p>
     <div class="tablewrap"><table class="dtable">
-      <thead><tr><th>Sheet label</th><th>What it covers</th><th>Limit</th><th>Key</th></tr></thead>
+      <thead><tr><th>Sheet label</th><th>What it covers</th><th>Limit (editable)</th><th>Key</th></tr></thead>
       <tbody>
-        <tr><td>avg Pace</td><td>Every measurement in the game, once each</td><td>&lt; 20 s</td><td>none</td></tr>
-        <tr><td>avg Pace after TD</td><td>From the end of a touchdown play to the R4P for the try</td><td>&lt; 20 s</td><td>2</td></tr>
-        <tr><td>avg Pace after XP/COP</td><td>After a try, or after any change of possession</td><td>&lt; 30 s</td><td>3</td></tr>
-        <tr><td>avg Pace w/o fouls</td><td>Regular downs with no penalty involved</td><td>&lt; 20 s</td><td>1</td></tr>
-        <tr><td>avg Pace on fouls</td><td>Downs where a foul was called and enforced or declined</td><td>&lt; 45 s</td><td>4</td></tr>
-        <tr><td>avg Pace in 2min</td><td>Any measurement tagged as inside the last two minutes of a half</td><td>&lt; 20 s</td><td>T toggles the tag</td></tr>
+        <tr><td>avg Pace</td><td>Every measurement in the game, once each</td><td class="limcell">&lt; <input type="number" class="limin" data-lim="all" min="1" max="600" step="1" aria-label="Limit in seconds"> s</td><td>none</td></tr>
+        <tr><td>avg Pace after TD</td><td>From the end of a touchdown play to the R4P for the try</td><td class="limcell">&lt; <input type="number" class="limin" data-lim="td" min="1" max="600" step="1" aria-label="Limit in seconds"> s</td><td>2</td></tr>
+        <tr><td>avg Pace after XP/COP</td><td>After a try, or after any change of possession</td><td class="limcell">&lt; <input type="number" class="limin" data-lim="xp" min="1" max="600" step="1" aria-label="Limit in seconds"> s</td><td>3</td></tr>
+        <tr><td>avg Pace w/o fouls</td><td>Regular downs with no penalty involved</td><td class="limcell">&lt; <input type="number" class="limin" data-lim="nf" min="1" max="600" step="1" aria-label="Limit in seconds"> s</td><td>1</td></tr>
+        <tr><td>avg Pace on fouls</td><td>Downs where a foul was called and enforced or declined</td><td class="limcell">&lt; <input type="number" class="limin" data-lim="fo" min="1" max="600" step="1" aria-label="Limit in seconds"> s</td><td>4</td></tr>
+        <tr><td>avg Pace in 2min</td><td>Any measurement tagged as inside the last two minutes of a half</td><td class="limcell">&lt; <input type="number" class="limin" data-lim="two" min="1" max="600" step="1" aria-label="Limit in seconds"> s</td><td>T toggles the tag</td></tr>
       </tbody>
     </table></div>
+    <div class="limbar"><span id="limState"></span><button class="btn" id="btnLimReset">Reset to defaults</button></div>
 
     <h3 id="a-method">Measurement method</h3>
     <p>The central design decision is that the tool measures in video time, not wall clock time. When a measurement starts, the tool reads the exact second the video is at; when the R4P is marked, it reads it again, and the pace is the difference. This means the reviewer can pause, rewind to find the true end of the play, or watch at 1.5x or 2x, and the result is still the time that actually passed in the game. A stopwatch would be wrong the moment the video is paused.</p>
@@ -357,7 +365,7 @@ kbd{font-family:var(--cond);font-weight:700;font-size:14px;background:var(--pane
     <p>Broadcast production can distort pace. If the stream cuts to a replay instead of showing live action, the video time includes the replay and the measured pace is longer than the real one. The tool cannot detect this. Reviewers should delete or correct those entries, or note the circumstance in the comment.</p>
     <p>Some channels disable playback outside YouTube. For those videos the tool offers a local file mode, which plays a downloaded copy of the game with the same measurement logic. Since 2025 YouTube also rejects embedded players on pages without a web origin, which is why the tool must be opened from its published address and not by double clicking the file on disk.</p>
     <p>Reviews are stored in the browser that was used to create them. They do not sync between computers or between reviewers. The backup buttons exist to move a review to another computer or hand it to another supervisor.</p>
-    <p>The limits, labels and categories reflect the review sheet and criteria in use when the tool was built (October 2026). If IFAF changes them, the constants described below need to be updated.</p>
+    <p>The limits, labels and categories reflect the review sheet and criteria in use when the tool was built (October 2026). Limits can be adjusted from the table above without touching the code; labels and categories still require a code change.</p>
 
     <h3 id="a-tech">Technical architecture</h3>
     <p>The whole tool is one self-contained HTML file with inline CSS and JavaScript. There is no build step, no framework, no server and no external dependency other than the YouTube IFrame Player API, which is loaded only when a YouTube video is opened, and two Google Fonts with system font fallbacks. The IFAF logo is embedded in the file as a data URI. This keeps hosting free and trivial: any static host works, and the reference deployment is GitHub Pages.</p>
@@ -379,10 +387,10 @@ kbd{font-family:var(--cond);font-weight:700;font-size:14px;background:var(--pane
       "comment": null }    // null means "use the template"
   ]
 }</code></pre>
-    <p>Sessions are saved in the browser's localStorage under <code>pace:&lt;key&gt;</code>. The key of the last opened session is stored in <code>pace:last</code> so the tool reopens it on load, and reviewer settings (comment template, export filter, decimal separator) live in <code>pace:settings</code>. Storage is scoped to the address the tool is served from, so moving the tool to a new address starts with empty storage; backups are the migration path. A backup file wraps the session as <code>{"app":"ifaf-game-pace","v":1,"session":{…}}</code>.</p>
+    <p>Sessions are saved in the browser's localStorage under <code>pace:&lt;key&gt;</code>. The key of the last opened session is stored in <code>pace:last</code> so the tool reopens it on load, and reviewer settings (comment template, export filter, decimal separator, custom limits) live in <code>pace:settings</code>. Storage is scoped to the address the tool is served from, so moving the tool to a new address starts with empty storage; backups are the migration path. A backup file wraps the session as <code>{"app":"ifaf-game-pace","v":1,"session":{…}}</code>.</p>
 
     <h3 id="a-extend">Changing or extending it</h3>
-    <p>Most likely changes only touch two constants near the top of the script. <code>TYPES</code> defines the measurement types: their internal ID, sheet label, button label, shortcut key and limit. <code>STATS</code> defines the rows of the averages table: label, limit and a filter function that selects which measurements count. Changing a limit means editing the number in both places where it applies. Adding a new type means adding an entry to <code>TYPES</code> with a free key and a matching row to <code>STATS</code>; the buttons, list, shortcuts and export pick it up automatically. Removing a type requires care with existing saved reviews, which may still contain its ID.</p>
+    <p>Most likely changes only touch two constants near the top of the script. <code>TYPES</code> defines the measurement types: their internal ID, sheet label, button label, shortcut key and limit. <code>STATS</code> defines the rows of the averages table: label, limit and a filter function that selects which measurements count. Day-to-day limit changes are made from the editable table on this page; the shipped defaults live in <code>DEFAULT_LIMITS</code>, and both <code>TYPES</code> and <code>STATS</code> read their limit from the active set, so a new default only needs to be written once. The rule everywhere is that a value is acceptable when it is strictly below its limit. Adding a new type means adding an entry to <code>TYPES</code> with a free key, a matching row to <code>STATS</code>, a default in <code>DEFAULT_LIMITS</code> and an input row in the limits table; the buttons, list, shortcuts and export pick it up automatically. Removing a type requires care with existing saved reviews, which may still contain its ID.</p>
     <p>If the session format changes, increase the backup version number and keep the loader able to read older backups.</p>
     <p>Before publishing a change, check at least the following by hand: a measurement with a pause in the middle, a measurement at 2x speed, switching type mid-measurement, the game start block, delete and undo, reopening the page to confirm the review is restored, and pasting both exports into a copy of the review sheet. The file can also be checked offline in local file mode with any video.</p>
     <p>Ideas that were considered and left for later: excluding an entry without deleting it, editing the start and end points of a logged entry, aggregating several reviews to compare crews across a tournament, and a shared online store so supervisors can see each other's reviews.</p>
@@ -390,6 +398,7 @@ kbd{font-family:var(--cond);font-weight:700;font-size:14px;background:var(--pane
     <h3 id="a-versions">Version history</h3>
     <div class="tablewrap"><table class="dtable">
       <tbody>
+        <tr><td>1.1</td><td>October 2026</td><td>Editable limits from the How it works page, applied live to measurements, averages, clock and export. A value equal to its limit now counts as over the limit everywhere.</td></tr>
         <tr><td>1.0</td><td>October 2026</td><td>First release. YouTube and local file playback, keyboard-driven measurement, last two minutes tag, live averages against limits, export aligned to the IFAF review sheet, per-video autosave and backups, English interface with IFAF visual identity.</td></tr>
       </tbody>
     </table></div>
@@ -405,24 +414,28 @@ kbd{font-family:var(--cond);font-weight:700;font-size:14px;background:var(--pane
 'use strict';
 
 const TYPES = {
-  nf:{label:'Pace w/o fouls',     short:'No foul',      key:'1', limit:20},
-  td:{label:'Pace after TD',      short:'After TD',        key:'2', limit:20},
-  xp:{label:'Pace after XP/COP',  short:'After XP / COP',  key:'3', limit:30},
-  fo:{label:'Pace on fouls',      short:'On foul',      key:'4', limit:45}
+  nf:{label:'Pace w/o fouls',     short:'No foul',        key:'1', get limit(){ return limits.nf; }},
+  td:{label:'Pace after TD',      short:'After TD',       key:'2', get limit(){ return limits.td; }},
+  xp:{label:'Pace after XP/COP',  short:'After XP / COP', key:'3', get limit(){ return limits.xp; }},
+  fo:{label:'Pace on fouls',      short:'On foul',        key:'4', get limit(){ return limits.fo; }}
 };
 const STATS = [
-  {label:'avg Pace',              limit:20, f:()=>true, main:true},
-  {label:'avg Pace after TD',     limit:20, f:e=>e.type==='td'},
-  {label:'avg Pace after XP/COP', limit:30, f:e=>e.type==='xp'},
-  {label:'avg Pace w/o fouls',    limit:20, f:e=>e.type==='nf'},
-  {label:'avg Pace on fouls',     limit:45, f:e=>e.type==='fo'},
-  {label:'avg Pace in 2min',      limit:20, f:e=>e.two}
+  {id:'all', label:'avg Pace',              get limit(){ return limits.all; }, f:()=>true, main:true},
+  {id:'td',  label:'avg Pace after TD',     get limit(){ return limits.td; },  f:e=>e.type==='td'},
+  {id:'xp',  label:'avg Pace after XP/COP', get limit(){ return limits.xp; },  f:e=>e.type==='xp'},
+  {id:'nf',  label:'avg Pace w/o fouls',    get limit(){ return limits.nf; },  f:e=>e.type==='nf'},
+  {id:'fo',  label:'avg Pace on fouls',     get limit(){ return limits.fo; },  f:e=>e.type==='fo'},
+  {id:'two', label:'avg Pace in 2min',      get limit(){ return limits.two; }, f:e=>e.two}
 ];
 const DEFAULT_TMPL = '{s} sec on {type}';
+// Default limits in seconds. A value is acceptable when it is strictly below its limit.
+// Reviewers can override them from the How it works page; overrides live in pace:settings.
+const DEFAULT_LIMITS = {all:20, td:20, xp:30, nf:20, fo:45, two:20};
 
 const $ = id => document.getElementById(id);
 let S = blankState();
 let settings = loadSettings();
+let limits = sanitizeLimits(settings.limits);
 let player = null;
 let run = null;          // {type, t0}
 let lastDeleted = null;
@@ -434,6 +447,11 @@ function blankState(){ return {key:null, src:null, start:null, entries:[], two:f
 function loadSettings(){
   try{ return Object.assign({tmpl:DEFAULT_TMPL, onlyOver:true, dec:'.'}, JSON.parse(localStorage.getItem('pace:settings')||'{}')); }
   catch(e){ return {tmpl:DEFAULT_TMPL, onlyOver:true, dec:'.'}; }
+}
+function sanitizeLimits(src){
+  const out=Object.assign({}, DEFAULT_LIMITS);
+  if(src) for(const k in DEFAULT_LIMITS){ const v=+src[k]; if(v>0 && v<=600) out[k]=v; }
+  return out;
 }
 function saveSettings(){ try{ localStorage.setItem('pace:settings', JSON.stringify(settings)); }catch(e){} }
 function save(){
@@ -571,7 +589,7 @@ function stopMeasure(){
   S.entries.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,6), t0:run.t0, t1, type:run.type, two:S.two, comment:null});
   const d=t1-run.t0, lim=TYPES[run.type].limit;
   run=null; save(); renderAll();
-  toast(TYPES[S.entries[S.entries.length-1].type].label+': '+d.toFixed(1)+' s'+(d>lim?'  (over the '+lim+' s limit)':''));
+  toast(TYPES[S.entries[S.entries.length-1].type].label+': '+d.toFixed(1)+' s'+(d>=lim?'  (over the '+lim+' s limit)':''));
 }
 function cancelMeasure(){ if(run){ run=null; renderMeasure(); updateClock(); toast('Measurement canceled.'); } }
 function toggleTwo(){ S.two=!S.two; save(); renderTwo(); }
@@ -580,7 +598,7 @@ function toggleTwo(){ S.two=!S.two; save(); renderTwo(); }
 function typeText(e){ return TYPES[e.type].label + (e.two ? ' (2min)' : ''); }
 function autoComment(e){ return settings.tmpl.split('{s}').join(Math.round(dur(e))).split('{type}').join(typeText(e)); }
 function commentOf(e){ return e.comment!=null ? e.comment : autoComment(e); }
-const isOver = e => dur(e) > TYPES[e.type].limit;
+const isOver = e => dur(e) >= TYPES[e.type].limit;
 
 /* ---------- render ---------- */
 function renderMeasure(){
@@ -648,7 +666,7 @@ function updateClock(){
   }
   if(run && player){
     const el=player.time()-run.t0, lim=TYPES[run.type].limit;
-    c.classList.add('running'); c.classList.toggle('over', el>lim);
+    c.classList.add('running'); c.classList.toggle('over', el>=lim);
     $('clockState').textContent = TYPES[run.type].label + (S.two?' (2min)':'') + ', from '+tc(run.t0);
     $('clockNum').innerHTML = (el<0?'−':'')+Math.abs(el).toFixed(1)+'<small>s</small>';
     $('clockBar').style.width = Math.min(100, Math.max(0, el/lim*100))+'%';
@@ -799,6 +817,27 @@ $('restoreFile').onchange=async e=>{
   }catch(err){ toast('That file is not a valid backup for this tool.',{err:true}); }
 };
 
+
+/* ---------- limits editor ---------- */
+function renderLimitInputs(){
+  document.querySelectorAll('[data-lim]').forEach(inp=>{ if(document.activeElement!==inp) inp.value=limits[inp.dataset.lim]; });
+  const custom=Object.keys(DEFAULT_LIMITS).some(k=>limits[k]!==DEFAULT_LIMITS[k]);
+  $('limState').textContent = custom ? 'Custom limits in use in this browser.' : 'Default limits in use.';
+  $('limState').classList.toggle('custom', custom);
+}
+document.querySelectorAll('[data-lim]').forEach(inp=>{
+  inp.addEventListener('change',()=>{
+    const v=parseFloat(String(inp.value).replace(',','.'));
+    if(!(v>0 && v<=600)){ toast('Enter a limit between 1 and 600 seconds.',{err:true}); inp.value=limits[inp.dataset.lim]; return; }
+    limits[inp.dataset.lim]=Math.round(v*10)/10; settings.limits=Object.assign({},limits); saveSettings();
+    renderAll(); renderLimitInputs(); toast('Limit updated. All measurements and averages now use it.');
+  });
+});
+$('btnLimReset').onclick=()=>{
+  limits=Object.assign({},DEFAULT_LIMITS); delete settings.limits; saveSettings();
+  renderAll(); renderLimitInputs(); toast('Limits reset to defaults.');
+};
+renderLimitInputs();
 
 /* ---------- about view ---------- */
 function showAbout(on){

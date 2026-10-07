@@ -126,7 +126,7 @@ input[type=checkbox]{accent-color:var(--gold);width:16px;height:16px}
 .tmpl{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);margin-bottom:10px;flex-wrap:wrap}
 .tmpl input{padding:5px 8px;min-width:240px;font-size:14px}
 .tablewrap{overflow-x:auto}
-table.entries{width:100%;border-collapse:collapse;min-width:760px}
+table.entries{width:100%;border-collapse:collapse;min-width:820px}
 .entries th{text-align:left;font-size:12px;font-weight:600;color:var(--muted);padding:6px 8px;border-bottom:1px solid var(--line2)}
 .entries td{padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:middle;font-size:14px}
 .entries tr:hover td{background:rgba(255,255,255,.02)}
@@ -187,6 +187,18 @@ kbd{font-family:var(--cond);font-weight:700;font-size:14px;background:var(--pane
 .limin:focus{border-color:var(--gold)!important}
 .limbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:-6px 0 18px;font-size:13px;color:var(--muted);flex-wrap:wrap}
 #limState.custom{color:var(--gold-hi)}
+
+.half{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid var(--line);border-radius:10px;padding:9px 14px;background:var(--bg2)}
+.half strong{font-family:var(--cond);font-size:20px;font-weight:600}
+.half .sub{font-size:12px;color:var(--muted)}
+.half .seg button{padding:6px 12px;font-weight:600;white-space:nowrap}
+.half .seg{flex-shrink:0}
+.half .seg button[aria-pressed="true"]{background:var(--gold);color:#18181B}
+.expgrp{display:flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:8px;padding:5px 6px 5px 12px;background:var(--bg2)}
+.exlbl{font-size:14px;font-weight:600;white-space:nowrap}
+.exlbl small{display:block;font-size:11px;font-weight:400;color:var(--muted)}
+.expgrp select{padding:5px 6px}
+.halftag{font-family:var(--cond);font-weight:600;font-size:15px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
@@ -254,6 +266,14 @@ kbd{font-family:var(--cond);font-weight:700;font-size:14px;background:var(--pane
       <div class="bar"><i id="clockBar"></i></div>
     </div>
 
+    <div class="half" id="halfBox">
+      <div><strong>Half</strong><div class="sub">Applies to the next measurements (H key)</div></div>
+      <div class="seg" role="group" aria-label="Half">
+        <button id="half1" aria-pressed="true">1st Half</button>
+        <button id="half2" aria-pressed="false">2nd Half</button>
+      </div>
+    </div>
+
     <div class="two" id="twoBox">
       <div><strong>Last 2 minutes</strong><div class="sub">Tags measurements in this stretch (T key)</div></div>
       <button class="switch" id="twoSwitch" aria-pressed="false" aria-label="Last 2 minutes mode"></button>
@@ -273,9 +293,16 @@ kbd{font-family:var(--cond);font-weight:700;font-size:14px;background:var(--pane
   <section class="log">
     <div class="loghead">
       <h2>Measurements</h2>
-      <label><input type="checkbox" id="onlyOver" checked> Export only those over the limit</label>
-      <button class="btn" id="btnCopyA">Copy column A</button>
-      <button class="btn" id="btnCopyCG">Copy columns C to G</button>
+      <div class="expgrp">
+        <span class="exlbl">Game Review <small>columns F, G</small></span>
+        <select id="scopeRv" aria-label="Game Review export scope"><option value="over">Over limit</option><option value="all">All</option></select>
+        <button class="btn" id="btnCopyRv">Copy</button>
+      </div>
+      <div class="expgrp">
+        <span class="exlbl">Game Tempo Log <small>columns A, B, C</small></span>
+        <select id="scopeTl" aria-label="Game Tempo Log export scope"><option value="all">All</option><option value="over">Over limit</option></select>
+        <button class="btn" id="btnCopyTl">Copy</button>
+      </div>
     </div>
     <div class="tmpl">
       <label for="tmplInput">Base comment</label>
@@ -315,17 +342,17 @@ kbd{font-family:var(--cond);font-weight:700;font-size:14px;background:var(--pane
     <p>Game Pace replaces that with a single page where the reviewer watches the game, marks the end of a play and the R4P with the keyboard, and gets live averages that can be pasted straight into the review sheet. Every measurement is tied to a video timecode, so any number in the feedback can be checked by anyone with the link.</p>
 
     <h3 id="a-metrics">What is measured</h3>
-    <p>Each measurement is the elapsed time from the moment the play ends to the R4P signal for the next down. The reviewer classifies every measurement by the situation it follows. The limits below are the acceptable thresholds agreed for feedback; a measurement or average is shown in green when it is below its limit and in red when it is at or above it.</p>
+    <p>Each measurement is the elapsed time from the moment the play ends to the R4P signal for the next down. The reviewer classifies every measurement by the situation it follows, using the Play Type categories of the IFAF Game Review and Game Tempo Log sheets. The limits below are the acceptable thresholds agreed for feedback; a measurement or average is shown in green when it is below its limit and in red when it is at or above it.</p>
     <p><strong>The limits are editable.</strong> Change a value in the table and every measurement, average, color, clock warning and exported grade updates immediately, including reviews already in progress. Limits are saved in this browser, so if the criteria change officially, every supervisor needs to update their own copy (or the defaults can be changed in the code, see below).</p>
     <div class="tablewrap"><table class="dtable">
-      <thead><tr><th>Sheet label</th><th>What it covers</th><th>Limit (editable)</th><th>Key</th></tr></thead>
+      <thead><tr><th>Play Type</th><th>What it covers</th><th>Limit (editable)</th><th>Key</th></tr></thead>
       <tbody>
-        <tr><td>avg Pace</td><td>Every measurement in the game, once each</td><td class="limcell">&lt; <input type="number" class="limin" data-lim="all" min="1" max="600" step="1" aria-label="Limit in seconds"> s</td><td>none</td></tr>
-        <tr><td>avg Pace after TD</td><td>From the end of a touchdown play to the R4P for the try</td><td class="limcell">&lt; <input type="number" class="limin" data-lim="td" min="1" max="600" step="1" aria-label="Limit in seconds"> s</td><td>2</td></tr>
-        <tr><td>avg Pace after XP/COP</td><td>After a try, or after any change of possession</td><td class="limcell">&lt; <input type="number" class="limin" data-lim="xp" min="1" max="600" step="1" aria-label="Limit in seconds"> s</td><td>3</td></tr>
-        <tr><td>avg Pace w/o fouls</td><td>Regular downs with no penalty involved</td><td class="limcell">&lt; <input type="number" class="limin" data-lim="nf" min="1" max="600" step="1" aria-label="Limit in seconds"> s</td><td>1</td></tr>
-        <tr><td>avg Pace on fouls</td><td>Downs where a foul was called and enforced or declined</td><td class="limcell">&lt; <input type="number" class="limin" data-lim="fo" min="1" max="600" step="1" aria-label="Limit in seconds"> s</td><td>4</td></tr>
-        <tr><td>avg Pace in 2min</td><td>Any measurement tagged as inside the last two minutes of a half</td><td class="limcell">&lt; <input type="number" class="limin" data-lim="two" min="1" max="600" step="1" aria-label="Limit in seconds"> s</td><td>T toggles the tag</td></tr>
+        <tr><td>Regular</td><td>Downs with no flag, outside the last two minutes of either half. Button: Regular</td><td class="limcell">&lt; <input type="number" class="limin" data-lim="nf" min="1" max="600" step="1" aria-label="Limit in seconds"> s</td><td>1</td></tr>
+        <tr><td>Regular (&lt;2:00)</td><td>Regular downs tagged as inside the last two minutes of either half</td><td class="limcell">&lt; <input type="number" class="limin" data-lim="two" min="1" max="600" step="1" aria-label="Limit in seconds"> s</td><td>1 with T on</td></tr>
+        <tr><td>After Touchdown</td><td>From the end of a touchdown play to the R4P for the try. Button: After TD</td><td class="limcell">&lt; <input type="number" class="limin" data-lim="td" min="1" max="600" step="1" aria-label="Limit in seconds"> s</td><td>2</td></tr>
+        <tr><td>After CoP</td><td>After a try, or after any change of possession. Button: After XP / COP</td><td class="limcell">&lt; <input type="number" class="limin" data-lim="xp" min="1" max="600" step="1" aria-label="Limit in seconds"> s</td><td>3</td></tr>
+        <tr><td>After Flag</td><td>Downs where a flag was thrown, whether the foul was enforced, declined or offset. Button: After Flag</td><td class="limcell">&lt; <input type="number" class="limin" data-lim="fo" min="1" max="600" step="1" aria-label="Limit in seconds"> s</td><td>4</td></tr>
+        <tr><td>Overall</td><td>Every measurement in the game, each counted once</td><td class="limcell">&lt; <input type="number" class="limin" data-lim="all" min="1" max="600" step="1" aria-label="Limit in seconds"> s</td><td>none</td></tr>
       </tbody>
     </table></div>
     <div class="limbar"><span id="limState"></span><button class="btn" id="btnLimReset">Reset to defaults</button></div>
@@ -336,9 +363,9 @@ kbd{font-family:var(--cond);font-weight:700;font-size:14px;background:var(--pane
     <p>The game start timecode exists for two reasons. Broadcasts usually include minutes of pregame content, and the tool blocks measurements before that point so none are logged by accident. It also lets the tool show game time alongside video time, which makes it easier to orient within the footage.</p>
 
     <h3 id="a-averages">How averages work</h3>
-    <p>Every measurement has exactly one type (no foul, after TD, after XP/COP, on foul). The last two minutes are not a fifth type but an independent tag, because a play inside the last two minutes can also be a foul or follow a touchdown. Treating it as a tag avoids forcing the reviewer to choose between two true descriptions of the same play.</p>
-    <p>The general average is the mean of all measurements, each counted once, including the ones tagged as last two minutes. Because the tag does not create a second entry, there is no double counting. Excluding tagged plays would bias the general figure by removing real plays from exactly the stretch where pace matters most.</p>
-    <p>The general average is deliberately not the average of the category averages. That method would give three foul measurements the same weight as forty regular downs. This was checked against a completed review sheet (Australia v Israel, IFAF World Flag 2026), where the general value matches a weighted mean of all measurements and not a mean of the category averages.</p>
+    <p>Every measurement has exactly one type: Regular, After TD, After XP / COP or After Flag. The last two minutes are not a fifth type but an independent tag that can be applied to any of them, because a play inside the last two minutes can also follow a flag or a touchdown. Treating it as a tag avoids forcing the reviewer to choose between two true descriptions of the same play, and keeps the data richer for later analysis.</p>
+    <p>For the averages, the tool follows the IFAF sheets. Only regular downs form a separate last two minutes category: Regular averages the untagged regular downs and Regular (&lt;2:00) averages the tagged ones, so each regular down counts in exactly one of the two. After Touchdown, After CoP and After Flag include their measurements whether tagged or not. A regular down tagged as last two minutes is also judged against the Regular (&lt;2:00) limit when it is colored and graded.</p>
+    <p>Overall is the mean of all measurements, each counted once. It is deliberately not the average of the category averages, which would give a handful of flags the same weight as dozens of regular downs. This was checked against two completed review sheets (Australia v Israel and Israel v Great Britain), where the overall value matches a weighted mean of all logged measurements.</p>
 
     <h3 id="a-workflow">Reviewer workflow</h3>
     <p>The tool is designed so the reviewer never has to look away from the video. Measurements are driven by the keyboard, and a transparent layer over the player keeps the keyboard focus on the tool instead of letting the YouTube player capture it. When the reviewer needs YouTube's own controls (video quality, captions), a button removes that layer; a warning appears if the shortcuts become paused as a result.</p>
@@ -347,18 +374,20 @@ kbd{font-family:var(--cond);font-weight:700;font-size:14px;background:var(--pane
         <tr><td><kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd> <kbd>4</kbd></td><td>Start a measurement of that type. Pressing a different number while timing switches the type without losing the start point.</td></tr>
         <tr><td><kbd>Enter</kbd></td><td>Mark the R4P and log the measurement.</td></tr>
         <tr><td><kbd>Esc</kbd></td><td>Cancel the measurement in progress.</td></tr>
+        <tr><td><kbd>H</kbd></td><td>Switch between 1st Half and 2nd Half for the next measurements. Switching half also turns the last two minutes tag off.</td></tr>
         <tr><td><kbd>T</kbd></td><td>Turn the last two minutes tag on or off for the next measurements.</td></tr>
         <tr><td><kbd>Space</kbd></td><td>Play or pause the video.</td></tr>
         <tr><td><kbd>←</kbd> <kbd>→</kbd></td><td>Rewind or skip 5 seconds; with Shift, 1 second.</td></tr>
       </tbody>
     </table></div>
-    <p>Logged entries can be corrected afterwards: type and two minute tag can be changed, the comment edited, and an entry deleted with a short undo window.</p>
+    <p>Logged entries can be corrected afterwards: half, type and two minute tag can be changed, the comment edited, and an entry deleted with a short undo window.</p>
 
     <h3 id="a-export">Export to the review sheet</h3>
     <p>Export follows the structure of the IFAF game review sheet rather than inventing a new format.</p>
-    <p><strong>Averages.</strong> Copy averages places the six values on the clipboard in the same vertical order as the sheet, from avg Pace to avg Pace in 2min, so they paste into the pace block in one action. Categories without measurements are left empty. The decimal separator can be set to point or comma to match the reviewer's spreadsheet locale.</p>
-    <p><strong>Rows.</strong> Measurements can be added to the play list of the sheet. Timecodes and the remaining columns are copied separately on purpose: column B holds a formula that builds the video link from column A, and pasting a single block across it would overwrite that formula. Column A receives the timecode in H:MM:SS. Columns C to G receive Mechanics, Crew, an empty Application cell, a grade of IM when the measurement is over its limit or CM otherwise, and the comment. By default only measurements over their limit are exported, since those are the ones that normally deserve a remark.</p>
-    <p><strong>Comment.</strong> The comment is a standardized starting point, meant to be shortened or expanded by the reviewer. It is built from an editable template where <code>{s}</code> becomes the rounded seconds and <code>{type}</code> becomes the sheet label of the type, with "(2min)" added when tagged. The default template produces text such as "24 sec on Pace w/o fouls". An edited comment is kept as written and can be reset to the template.</p>
+    <p><strong>Averages.</strong> Copy averages places the six values on the clipboard in the same vertical order as the tempo block of the Game Review sheet (Regular, Regular (&lt;2:00), After Touchdown, After CoP, After Flag, Overall), so they paste into cells E7 to E12 in one action. If the sheet already computes those cells from the Game Tempo Log, pasting the log is enough and this button is optional. Categories without measurements are left empty. The decimal separator can be set to point or comma to match the reviewer's spreadsheet locale.</p>
+    <p><strong>Game Review sheet.</strong> Measurements worth a remark are pasted into the play list of the Game Review sheet. Only columns F (Grading) and G (Comment) are copied, so the reviewer keeps full control of time, play type, position and foul code, and the link formula in column B is never touched. Grading is IM when the measurement is at or above its limit and CM otherwise. The default scope is measurements over the limit, since those are the ones that normally deserve a remark; it can be switched to all.</p>
+    <p><strong>Game Tempo Log sheet.</strong> This sheet holds one row per measurement with Half, Play Type and Time Until Next RFP in seconds, and the tempo block of the Game Review sheet averages it by play type. The tool copies those three columns in chronological order, with seconds rounded to one decimal. The default scope is all measurements, because the averages in the sheet are only meaningful with the full log; it can be restricted to measurements over the limit. Play Type is written with the sheet labels: Regular, or Regular (&lt;2:00) when a regular down is tagged as last two minutes; After Touchdown; After CoP; After Flag. A tagged touchdown, CoP or flag measurement keeps its own play type, as the sheet expects; the tag itself stays available inside the tool.</p>
+    <p><strong>Comment.</strong> The comment is a standardized starting point, meant to be shortened or expanded by the reviewer. It is built from an editable template where <code>{s}</code> becomes the rounded seconds and <code>{type}</code> becomes the Play Type label, with "(&lt;2:00)" added when tagged. The default template produces text such as "24 sec on Regular" or "48 sec on After Flag (&lt;2:00)". An edited comment is kept as written and can be reset to the template.</p>
 
     <h3 id="a-assumptions">Assumptions and limitations</h3>
     <p>The end of a play and the R4P are judgment calls made by the reviewer on what the footage shows. The tool makes the timing precise, but it cannot make those two decisions for the reviewer, and consistency between reviewers depends on applying the same criteria.</p>
@@ -380,17 +409,19 @@ kbd{font-family:var(--cond);font-weight:700;font-size:14px;background:var(--pane
   "src": { "kind": "yt", "id": "3ink6ZlQUuU", "url": "https://www.youtube.com/watch?v=3ink6ZlQUuU" },
   "start": 425,            // game start in video seconds, or null
   "two": false,            // last two minutes tag currently on
+  "half": 1,               // half applied to new measurements (1 or 2)
   "entries": [
     { "id": "m1x2y3", "t0": 577.4, "t1": 598.6,
       "type": "nf",        // nf | td | xp | fo
       "two": false,
+      "half": 1,           // 1st or 2nd half; entries saved before v1.2 count as 1st
       "comment": null }    // null means "use the template"
   ]
 }</code></pre>
-    <p>Sessions are saved in the browser's localStorage under <code>pace:&lt;key&gt;</code>. The key of the last opened session is stored in <code>pace:last</code> so the tool reopens it on load, and reviewer settings (comment template, export filter, decimal separator, custom limits) live in <code>pace:settings</code>. Storage is scoped to the address the tool is served from, so moving the tool to a new address starts with empty storage; backups are the migration path. A backup file wraps the session as <code>{"app":"ifaf-game-pace","v":1,"session":{…}}</code>.</p>
+    <p>Sessions are saved in the browser's localStorage under <code>pace:&lt;key&gt;</code>. The key of the last opened session is stored in <code>pace:last</code> so the tool reopens it on load, and reviewer settings (comment template, export scopes, decimal separator, custom limits) live in <code>pace:settings</code>. Storage is scoped to the address the tool is served from, so moving the tool to a new address starts with empty storage; backups are the migration path. A backup file wraps the session as <code>{"app":"ifaf-game-pace","v":1,"session":{…}}</code>.</p>
 
     <h3 id="a-extend">Changing or extending it</h3>
-    <p>Most likely changes only touch two constants near the top of the script. <code>TYPES</code> defines the measurement types: their internal ID, sheet label, button label, shortcut key and limit. <code>STATS</code> defines the rows of the averages table: label, limit and a filter function that selects which measurements count. Day-to-day limit changes are made from the editable table on this page; the shipped defaults live in <code>DEFAULT_LIMITS</code>, and both <code>TYPES</code> and <code>STATS</code> read their limit from the active set, so a new default only needs to be written once. The rule everywhere is that a value is acceptable when it is strictly below its limit. Adding a new type means adding an entry to <code>TYPES</code> with a free key, a matching row to <code>STATS</code>, a default in <code>DEFAULT_LIMITS</code> and an input row in the limits table; the buttons, list, shortcuts and export pick it up automatically. Removing a type requires care with existing saved reviews, which may still contain its ID.</p>
+    <p>Most likely changes only touch two constants near the top of the script. <code>TYPES</code> defines the measurement types: their internal ID, Play Type label, button label, shortcut key and limit. The internal IDs (<code>nf</code>, <code>td</code>, <code>xp</code>, <code>fo</code>) date from version 1.0 and were kept when the labels changed, so older saved reviews still load; rename labels freely, but do not change IDs. <code>STATS</code> defines the rows of the averages table in sheet order: label, limit and a filter function that selects which measurements count. The function <code>limitFor</code> decides which limit applies to a single measurement. Day-to-day limit changes are made from the editable table on this page; the shipped defaults live in <code>DEFAULT_LIMITS</code>, and both <code>TYPES</code> and <code>STATS</code> read their limit from the active set, so a new default only needs to be written once. The rule everywhere is that a value is acceptable when it is strictly below its limit. Adding a new type means adding an entry to <code>TYPES</code> with a free key, a matching row to <code>STATS</code>, a default in <code>DEFAULT_LIMITS</code> and an input row in the limits table; the buttons, list, shortcuts and export pick it up automatically. Removing a type requires care with existing saved reviews, which may still contain its ID.</p>
     <p>If the session format changes, increase the backup version number and keep the loader able to read older backups.</p>
     <p>Before publishing a change, check at least the following by hand: a measurement with a pause in the middle, a measurement at 2x speed, switching type mid-measurement, the game start block, delete and undo, reopening the page to confirm the review is restored, and pasting both exports into a copy of the review sheet. The file can also be checked offline in local file mode with any video.</p>
     <p>Ideas that were considered and left for later: excluding an entry without deleting it, editing the start and end points of a logged entry, aggregating several reviews to compare crews across a tournament, and a shared online store so supervisors can see each other's reviews.</p>
@@ -398,6 +429,8 @@ kbd{font-family:var(--cond);font-weight:700;font-size:14px;background:var(--pane
     <h3 id="a-versions">Version history</h3>
     <div class="tablewrap"><table class="dtable">
       <tbody>
+        <tr><td>1.3</td><td>October 2026</td><td>Categories aligned with the new IFAF Game Review template: Regular, Regular (&lt;2:00), After Touchdown, After CoP, After Flag and Overall. Buttons renamed to Regular and After Flag. The last two minutes tag stays available on every type, but only regular downs form the (&lt;2:00) category and use its limit.</td></tr>
+        <tr><td>1.2</td><td>October 2026</td><td>Half selector (H key) stored with each measurement. Separate exports for the Game Review sheet (columns F and G) and the Game Tempo Log sheet (Half, Play Type, seconds), each with its own all or over limit scope.</td></tr>
         <tr><td>1.1</td><td>October 2026</td><td>Editable limits from the How it works page, applied live to measurements, averages, clock and export. A value equal to its limit now counts as over the limit everywhere.</td></tr>
         <tr><td>1.0</td><td>October 2026</td><td>First release. YouTube and local file playback, keyboard-driven measurement, last two minutes tag, live averages against limits, export aligned to the IFAF review sheet, per-video autosave and backups, English interface with IFAF visual identity.</td></tr>
       </tbody>
@@ -413,19 +446,25 @@ kbd{font-family:var(--cond);font-weight:700;font-size:14px;background:var(--pane
 (function(){
 'use strict';
 
+// Internal IDs (nf, td, xp, fo) are kept from v1.0 so saved reviews stay valid.
+// label = Play Type label used by the IFAF review sheets; short = button label.
 const TYPES = {
-  nf:{label:'Pace w/o fouls',     short:'No foul',        key:'1', get limit(){ return limits.nf; }},
-  td:{label:'Pace after TD',      short:'After TD',       key:'2', get limit(){ return limits.td; }},
-  xp:{label:'Pace after XP/COP',  short:'After XP / COP', key:'3', get limit(){ return limits.xp; }},
-  fo:{label:'Pace on fouls',      short:'On foul',        key:'4', get limit(){ return limits.fo; }}
+  nf:{label:'Regular',         short:'Regular',        key:'1', get limit(){ return limits.nf; }},
+  td:{label:'After Touchdown', short:'After TD',       key:'2', get limit(){ return limits.td; }},
+  xp:{label:'After CoP',       short:'After XP / COP', key:'3', get limit(){ return limits.xp; }},
+  fo:{label:'After Flag',      short:'After Flag',     key:'4', get limit(){ return limits.fo; }}
 };
+// Rows of the tempo block in the Game Review sheet (D7:E12), in sheet order.
+// The last two minutes tag is kept on every type for analysis, but as in the sheet
+// only regular downs form their own (<2:00) category; tagged TD, CoP and Flag
+// measurements stay in their own category.
 const STATS = [
-  {id:'all', label:'avg Pace',              get limit(){ return limits.all; }, f:()=>true, main:true},
-  {id:'td',  label:'avg Pace after TD',     get limit(){ return limits.td; },  f:e=>e.type==='td'},
-  {id:'xp',  label:'avg Pace after XP/COP', get limit(){ return limits.xp; },  f:e=>e.type==='xp'},
-  {id:'nf',  label:'avg Pace w/o fouls',    get limit(){ return limits.nf; },  f:e=>e.type==='nf'},
-  {id:'fo',  label:'avg Pace on fouls',     get limit(){ return limits.fo; },  f:e=>e.type==='fo'},
-  {id:'two', label:'avg Pace in 2min',      get limit(){ return limits.two; }, f:e=>e.two}
+  {id:'nf',  label:'Regular',         get limit(){ return limits.nf; },  f:e=>e.type==='nf' && !e.two},
+  {id:'two', label:'Regular (<2:00)', get limit(){ return limits.two; }, f:e=>e.type==='nf' && e.two},
+  {id:'td',  label:'After Touchdown', get limit(){ return limits.td; },  f:e=>e.type==='td'},
+  {id:'xp',  label:'After CoP',       get limit(){ return limits.xp; },  f:e=>e.type==='xp'},
+  {id:'fo',  label:'After Flag',      get limit(){ return limits.fo; },  f:e=>e.type==='fo'},
+  {id:'all', label:'Overall',         get limit(){ return limits.all; }, f:()=>true, main:true}
 ];
 const DEFAULT_TMPL = '{s} sec on {type}';
 // Default limits in seconds. A value is acceptable when it is strictly below its limit.
@@ -441,12 +480,12 @@ let run = null;          // {type, t0}
 let lastDeleted = null;
 let mode = 'yt';
 
-function blankState(){ return {key:null, src:null, start:null, entries:[], two:false}; }
+function blankState(){ return {key:null, src:null, start:null, entries:[], two:false, half:1}; }
 
 /* ---------- storage ---------- */
 function loadSettings(){
-  try{ return Object.assign({tmpl:DEFAULT_TMPL, onlyOver:true, dec:'.'}, JSON.parse(localStorage.getItem('pace:settings')||'{}')); }
-  catch(e){ return {tmpl:DEFAULT_TMPL, onlyOver:true, dec:'.'}; }
+  try{ return Object.assign({tmpl:DEFAULT_TMPL, scopeRv:'over', scopeTl:'all', dec:'.'}, JSON.parse(localStorage.getItem('pace:settings')||'{}')); }
+  catch(e){ return {tmpl:DEFAULT_TMPL, scopeRv:'over', scopeTl:'all', dec:'.'}; }
 }
 function sanitizeLimits(src){
   const out=Object.assign({}, DEFAULT_LIMITS);
@@ -586,19 +625,27 @@ function stopMeasure(){
   if(!run){ toast('No measurement in progress.'); return; }
   const t1=player.time();
   if(t1 - run.t0 < 0.3){ toast('The R4P is before or right on top of the start. Move the video forward or cancel with Esc.', {err:true}); return; }
-  S.entries.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,6), t0:run.t0, t1, type:run.type, two:S.two, comment:null});
-  const d=t1-run.t0, lim=TYPES[run.type].limit;
+  S.entries.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,6), t0:run.t0, t1, type:run.type, two:S.two, half:S.half||1, comment:null});
+  const d=t1-run.t0, lim=limitFor(run.type, S.two);
   run=null; save(); renderAll();
   toast(TYPES[S.entries[S.entries.length-1].type].label+': '+d.toFixed(1)+' s'+(d>=lim?'  (over the '+lim+' s limit)':''));
 }
 function cancelMeasure(){ if(run){ run=null; renderMeasure(); updateClock(); toast('Measurement canceled.'); } }
 function toggleTwo(){ S.two=!S.two; save(); renderTwo(); }
+function setHalf(n){
+  if((S.half||1)===n) return;
+  S.half=n;
+  if(S.two){ S.two=false; toast((n===2?'2nd':'1st')+' Half. Last 2 minutes tag turned off.'); } else toast((n===2?'2nd':'1st')+' Half.');
+  save(); renderTwo();
+}
 
 /* ---------- comments ---------- */
-function typeText(e){ return TYPES[e.type].label + (e.two ? ' (2min)' : ''); }
+function typeText(e){ return TYPES[e.type].label + (e.two ? ' (<2:00)' : ''); }
 function autoComment(e){ return settings.tmpl.split('{s}').join(Math.round(dur(e))).split('{type}').join(typeText(e)); }
 function commentOf(e){ return e.comment!=null ? e.comment : autoComment(e); }
-const isOver = e => dur(e) >= TYPES[e.type].limit;
+// A regular down tagged as last two minutes is judged against the Regular (<2:00) limit.
+const limitFor = (type, two) => (type==='nf' && two) ? limits.two : TYPES[type].limit;
+const isOver = e => dur(e) >= limitFor(e.type, e.two);
 
 /* ---------- render ---------- */
 function renderMeasure(){
@@ -611,6 +658,8 @@ function renderMeasure(){
      <div class="keys">Esc cancels. Pressed the wrong type mid-measurement? Press the right number and it switches without losing the start.</div>`;
 }
 function renderTwo(){
+  const hf=S.half||1;
+  $('half1').setAttribute('aria-pressed', hf===1); $('half2').setAttribute('aria-pressed', hf===2);
   $('twoBox').classList.toggle('on', S.two);
   $('twoSwitch').setAttribute('aria-pressed', S.two);
 }
@@ -632,12 +681,13 @@ function renderLog(){
   }
   const opts=id=>Object.entries(TYPES).map(([k,t])=>`<option value="${k}"${k===id?' selected':''}>${t.label}</option>`).join('');
   $('logWrap').innerHTML = `<table class="entries"><thead><tr>
-      <th>Timecode</th><th>Type</th><th>2 min</th><th>Pace</th><th style="width:45%">Comment (column G)</th><th></th>
+      <th>Timecode</th><th>Half</th><th>Type</th><th>2 min</th><th>Pace</th><th style="width:45%">Comment (column G)</th><th></th>
     </tr></thead><tbody>` +
     list.map(e=>{
       const over=isOver(e);
       return `<tr data-id="${e.id}" class="${over?'isover':''}">
         <td><button class="tcb" data-act="jump" title="Jump to this moment">${tc(e.t0)}</button></td>
+        <td><select data-act="half" aria-label="Half"><option value="1"${(e.half||1)===1?' selected':''}>1st</option><option value="2"${e.half===2?' selected':''}>2nd</option></select></td>
         <td><select data-act="type" aria-label="Measurement type">${opts(e.type)}</select></td>
         <td><input type="checkbox" data-act="two" ${e.two?'checked':''} aria-label="Last 2 minutes"></td>
         <td class="dur ${over?'bad':'ok'}">${dur(e).toFixed(1)} s</td>
@@ -665,9 +715,9 @@ function updateClock(){
     $('tcGame').textContent = S.start!=null ? (t>=S.start ? 'game '+tc(t-S.start) : 'pregame') : '';
   }
   if(run && player){
-    const el=player.time()-run.t0, lim=TYPES[run.type].limit;
+    const el=player.time()-run.t0, lim=limitFor(run.type, S.two);
     c.classList.add('running'); c.classList.toggle('over', el>=lim);
-    $('clockState').textContent = TYPES[run.type].label + (S.two?' (2min)':'') + ', from '+tc(run.t0);
+    $('clockState').textContent = ((S.half||1)===2?'2nd Half, ':'1st Half, ') + TYPES[run.type].label + (S.two?' (<2:00)':'') + ', from '+tc(run.t0);
     $('clockNum').innerHTML = (el<0?'−':'')+Math.abs(el).toFixed(1)+'<small>s</small>';
     $('clockBar').style.width = Math.min(100, Math.max(0, el/lim*100))+'%';
   } else {
@@ -677,7 +727,7 @@ function updateClock(){
       $('clockState').textContent='Last: '+typeText(last);
       $('clockNum').innerHTML=dur(last).toFixed(1)+'<small>s</small>';
       c.classList.toggle('over', isOver(last));
-      $('clockBar').style.width=Math.min(100,dur(last)/TYPES[last.type].limit*100)+'%';
+      $('clockBar').style.width=Math.min(100,dur(last)/limitFor(last.type,last.two)*100)+'%';
     } else {
       $('clockState').textContent='Ready to measure';
       $('clockNum').innerHTML='0.0<small>s</small>'; $('clockBar').style.width='0';
@@ -701,9 +751,13 @@ async function copy(text,msg){
   catch(e){ const ta=document.createElement('textarea'); ta.value=text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); }
   toast(msg);
 }
-function exportList(){
+// Play Type labels of the Game Tempo Log sheet ('Game Review'!D7:D11).
+// The last two minutes only form their own category for regular downs.
+function tempoType(e){ return (e.type==='nf' && e.two) ? 'Regular (<2:00)' : TYPES[e.type].label; }
+const halfLabel = e => (e.half===2 ? '2nd Half' : '1st Half');
+function exportList(scope){
   const list=[...S.entries].sort((a,b)=>a.t0-b.t0);
-  return settings.onlyOver ? list.filter(isOver) : list;
+  return scope==='over' ? list.filter(isOver) : list;
 }
 
 /* ---------- events ---------- */
@@ -764,6 +818,7 @@ $('logWrap').addEventListener('change',e=>{
   const ent=S.entries.find(x=>x.id===row.dataset.id); if(!ent) return;
   if(el.dataset.act==='type'){ ent.type=el.value; }
   else if(el.dataset.act==='two'){ ent.two=el.checked; }
+  else if(el.dataset.act==='half'){ ent.half=+el.value; }
   else return;
   save(); renderAll();
 });
@@ -777,22 +832,25 @@ $('logWrap').addEventListener('focusout',e=>{ if(e.target.dataset.act==='comment
 
 $('tmplInput').value=settings.tmpl;
 $('tmplInput').addEventListener('input',()=>{ settings.tmpl=$('tmplInput').value||DEFAULT_TMPL; saveSettings(); renderLog(); });
-$('onlyOver').checked=settings.onlyOver;
-$('onlyOver').onchange=()=>{ settings.onlyOver=$('onlyOver').checked; saveSettings(); };
+$('scopeRv').value=settings.scopeRv; $('scopeTl').value=settings.scopeTl;
+$('scopeRv').onchange=()=>{ settings.scopeRv=$('scopeRv').value; saveSettings(); };
+$('scopeTl').onchange=()=>{ settings.scopeTl=$('scopeTl').value; saveSettings(); };
+$('half1').onclick=()=>setHalf(1); $('half2').onclick=()=>setHalf(2);
 $('decSep').value=settings.dec;
 $('decSep').onchange=()=>{ settings.dec=$('decSep').value; saveSettings(); };
 
 $('btnCopyAvg').onclick=()=>{
   const lines=STATS.map(st=>{ const v=S.entries.filter(st.f).map(dur); return v.length?fmt2(v.reduce((a,b)=>a+b,0)/v.length):''; });
-  copy(lines.join('\n'),'Averages copied in sheet order (avg Pace through avg Pace in 2min).');
+  copy(lines.join('\n'),'Averages copied in sheet order (Regular through Overall). Paste them at E7.');
 };
-$('btnCopyA').onclick=()=>{
-  const l=exportList(); if(!l.length) return toast('No measurements to export with the current filter.');
-  copy(l.map(e=>tc(e.t0)).join('\n'), l.length+' timecodes copied. Paste them into column A.');
+$('btnCopyRv').onclick=()=>{
+  const l=exportList(settings.scopeRv); if(!l.length) return toast('No measurements to export with the current filter.');
+  copy(l.map(e=>[isOver(e)?'IM':'CM', commentOf(e)].join('\t')).join('\n'), l.length+' rows copied for Game Review. Paste them at column F.');
 };
-$('btnCopyCG').onclick=()=>{
-  const l=exportList(); if(!l.length) return toast('No measurements to export with the current filter.');
-  copy(l.map(e=>['Mechanics','Crew','',isOver(e)?'IM':'CM',commentOf(e)].join('\t')).join('\n'), l.length+' rows copied. Paste them starting at column C of the same row.');
+$('btnCopyTl').onclick=()=>{
+  const l=exportList(settings.scopeTl); if(!l.length) return toast('No measurements to export with the current filter.');
+  copy(l.map(e=>[halfLabel(e), tempoType(e), (Math.round(dur(e)*10)/10).toFixed(1).replace('.',settings.dec)].join('\t')).join('\n'),
+       l.length+' rows copied for Game Tempo Log. Paste them at column A.');
 };
 $('btnClear').onclick=()=>{
   if(!S.entries.length) return;
@@ -862,6 +920,7 @@ document.addEventListener('keydown',e=>{
     case 'Enter': stopMeasure(); break;
     case 'Escape': cancelMeasure(); break;
     case 't': case 'T': toggleTwo(); break;
+    case 'h': case 'H': setHalf((S.half||1)===1?2:1); break;
     case ' ': if(player){ player.toggle(); setTimeout(updatePlayBtn,150); } break;
     case 'ArrowLeft': nudge(e.shiftKey?-1:-5); break;
     case 'ArrowRight': nudge(e.shiftKey?1:5); break;

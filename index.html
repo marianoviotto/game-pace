@@ -199,6 +199,25 @@ kbd{font-family:var(--cond);font-weight:700;font-size:14px;background:var(--pane
 .exlbl small{display:block;font-size:11px;font-weight:400;color:var(--muted)}
 .expgrp select{padding:5px 6px}
 .halftag{font-family:var(--cond);font-weight:600;font-size:15px}
+
+.tour{position:fixed;inset:0;z-index:50}
+.tour[hidden]{display:none}
+.tour-spot{position:fixed;border-radius:12px;box-shadow:0 0 0 9999px rgba(8,8,10,.78);outline:2px solid var(--gold);outline-offset:4px;transition:top .25s,left .25s,width .25s,height .25s;pointer-events:none}
+.tour-spot.none{top:50%!important;left:50%!important;width:0!important;height:0!important;outline:0}
+.tour-card{position:fixed;width:min(360px,calc(100vw - 32px));background:var(--panel);border:1px solid var(--gold-deep);border-top:4px solid var(--gold);border-radius:12px;padding:18px 20px 16px;box-shadow:0 18px 50px rgba(0,0,0,.55);transition:top .25s,left .25s}
+.tour-step{font-size:12px;color:var(--gold-hi);font-weight:600;letter-spacing:.4px}
+.tour-card h3{font-family:var(--cond);font-weight:700;font-size:26px;margin:4px 0 8px;color:var(--text)}
+.tour-body{font-size:14.5px;line-height:1.55;color:#D4D4D8}
+.tour-body p{margin:0 0 10px}
+.tour-body kbd{font-size:13px}
+.tour-nav{display:flex;align-items:center;gap:8px;margin-top:14px}
+.tour-nav button{white-space:nowrap}
+.tour-skip{background:none;border:0;color:var(--muted);font-size:13px;padding:4px 0;margin-right:auto;text-decoration:underline;text-underline-offset:3px}
+.tour-skip:hover{color:var(--text)}
+.tour-dots{display:flex;gap:5px;margin-right:6px}
+.tour-dots i{width:7px;height:7px;border-radius:50%;background:var(--line2)}
+.tour-dots i.on{background:var(--gold)}
+#tourBack[hidden]{display:none}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
@@ -209,6 +228,7 @@ kbd{font-family:var(--cond);font-weight:700;font-size:14px;background:var(--pane
   <div class="meta">
     <div>Game start: <b id="metaStart">not set</b></div>
     <div>Measurements: <b id="metaCount">0</b></div>
+    <button id="btnTour" title="Show the quick tour again">Tour</button>
     <button id="btnAbout" class="navbtn" aria-pressed="false">How it works</button>
     <button id="btnBackup" title="Download a backup of this review">Backup</button>
     <button id="btnRestore" title="Load a saved backup">Load backup</button>
@@ -219,7 +239,7 @@ kbd{font-family:var(--cond);font-weight:700;font-size:14px;background:var(--pane
 
 <main class="grid" id="toolView">
   <section class="stage">
-    <div class="source">
+    <div class="source" id="srcBar">
       <div class="seg" role="group" aria-label="Video source">
         <button id="modeYt" aria-pressed="true">YouTube</button>
         <button id="modeFile" aria-pressed="false">Local file</button>
@@ -291,7 +311,7 @@ kbd{font-family:var(--cond);font-weight:700;font-size:14px;background:var(--pane
   </aside>
 
   <section class="log">
-    <div class="loghead">
+    <div class="loghead" id="logHead">
       <h2>Measurements</h2>
       <div class="expgrp">
         <span class="exlbl">Game Review <small>columns F, G</small></span>
@@ -380,6 +400,7 @@ kbd{font-family:var(--cond);font-weight:700;font-size:14px;background:var(--pane
         <tr><td><kbd>←</kbd> <kbd>→</kbd></td><td>Rewind or skip 5 seconds; with Shift, 1 second.</td></tr>
       </tbody>
     </table></div>
+    <p>The first time the tool is opened in a browser, a five step welcome tour highlights the video source, the measurement buttons, the half and last two minutes controls, the export area, and the backup and help buttons. It can be skipped and replayed at any time with the Tour button.</p>
     <p>Logged entries can be corrected afterwards: half, type and two minute tag can be changed, the comment edited, and an entry deleted with a short undo window.</p>
 
     <h3 id="a-export">Export to the review sheet</h3>
@@ -418,7 +439,7 @@ kbd{font-family:var(--cond);font-weight:700;font-size:14px;background:var(--pane
       "comment": null }    // null means "use the template"
   ]
 }</code></pre>
-    <p>Sessions are saved in the browser's localStorage under <code>pace:&lt;key&gt;</code>. The key of the last opened session is stored in <code>pace:last</code> so the tool reopens it on load, and reviewer settings (comment template, export scopes, decimal separator, custom limits) live in <code>pace:settings</code>. Storage is scoped to the address the tool is served from, so moving the tool to a new address starts with empty storage; backups are the migration path. A backup file wraps the session as <code>{"app":"ifaf-game-pace","v":1,"session":{…}}</code>.</p>
+    <p>Sessions are saved in the browser's localStorage under <code>pace:&lt;key&gt;</code>. The key of the last opened session is stored in <code>pace:last</code> so the tool reopens it on load, and reviewer settings (comment template, export scopes, decimal separator, custom limits) live in <code>pace:settings</code>. A <code>pace:tour</code> flag records that the welcome tour was seen. Storage is scoped to the address the tool is served from, so moving the tool to a new address starts with empty storage; backups are the migration path. A backup file wraps the session as <code>{"app":"ifaf-game-pace","v":1,"session":{…}}</code>.</p>
 
     <h3 id="a-extend">Changing or extending it</h3>
     <p>Most likely changes only touch two constants near the top of the script. <code>TYPES</code> defines the measurement types: their internal ID, Play Type label, button label, shortcut key and limit. The internal IDs (<code>nf</code>, <code>td</code>, <code>xp</code>, <code>fo</code>) date from version 1.0 and were kept when the labels changed, so older saved reviews still load; rename labels freely, but do not change IDs. <code>STATS</code> defines the rows of the averages table in sheet order: label, limit and a filter function that selects which measurements count. The function <code>limitFor</code> decides which limit applies to a single measurement. Day-to-day limit changes are made from the editable table on this page; the shipped defaults live in <code>DEFAULT_LIMITS</code>, and both <code>TYPES</code> and <code>STATS</code> read their limit from the active set, so a new default only needs to be written once. The rule everywhere is that a value is acceptable when it is strictly below its limit. Adding a new type means adding an entry to <code>TYPES</code> with a free key, a matching row to <code>STATS</code>, a default in <code>DEFAULT_LIMITS</code> and an input row in the limits table; the buttons, list, shortcuts and export pick it up automatically. Removing a type requires care with existing saved reviews, which may still contain its ID.</p>
@@ -429,6 +450,8 @@ kbd{font-family:var(--cond);font-weight:700;font-size:14px;background:var(--pane
     <h3 id="a-versions">Version history</h3>
     <div class="tablewrap"><table class="dtable">
       <tbody>
+        <tr><td>1.5</td><td>October 2026</td><td>Fifth tour step pointing to Backup, Load backup and How it works.</td></tr>
+        <tr><td>1.4</td><td>October 2026</td><td>Welcome tour on first use, with four highlighted steps and a Tour button to replay it.</td></tr>
         <tr><td>1.3</td><td>October 2026</td><td>Categories aligned with the new IFAF Game Review template: Regular, Regular (&lt;2:00), After Touchdown, After CoP, After Flag and Overall. Buttons renamed to Regular and After Flag. The last two minutes tag stays available on every type, but only regular downs form the (&lt;2:00) category and use its limit.</td></tr>
         <tr><td>1.2</td><td>October 2026</td><td>Half selector (H key) stored with each measurement. Separate exports for the Game Review sheet (columns F and G) and the Game Tempo Log sheet (Half, Play Type, seconds), each with its own all or over limit scope.</td></tr>
         <tr><td>1.1</td><td>October 2026</td><td>Editable limits from the How it works page, applied live to measurements, averages, clock and export. A value equal to its limit now counts as over the limit everywhere.</td></tr>
@@ -439,6 +462,21 @@ kbd{font-family:var(--cond);font-weight:700;font-size:14px;background:var(--pane
   </article>
 </section>
 
+
+<div class="tour" id="tour" hidden>
+  <div class="tour-spot" id="tourSpot"></div>
+  <div class="tour-card" id="tourCard" role="dialog" aria-modal="true" aria-labelledby="tourTitle">
+    <div class="tour-step" id="tourStep"></div>
+    <h3 id="tourTitle"></h3>
+    <div class="tour-body" id="tourBody"></div>
+    <div class="tour-nav">
+      <button class="tour-skip" id="tourSkip">Skip tour</button>
+      <div class="tour-dots" id="tourDots"></div>
+      <button class="btn" id="tourBack">Back</button>
+      <button class="btn primary" id="tourNext">Next</button>
+    </div>
+  </div>
+</div>
 
 <div id="toast" role="status" aria-live="polite"><span id="toastMsg"></span><button id="toastAct" hidden>Undo</button></div>
 
@@ -908,6 +946,93 @@ const aboutOpen=()=>!$('about').hidden;
 $('btnAbout').onclick=()=>{ const on=!aboutOpen(); history.replaceState(null,'',on?'#about':location.pathname+location.search); showAbout(on); };
 document.querySelectorAll('.toc a').forEach(a=>a.addEventListener('click',e=>{ e.preventDefault(); document.querySelector(a.getAttribute('href')).scrollIntoView({behavior:'smooth'}); }));
 if(location.hash==='#about') showAbout(true);
+
+/* ---------- welcome tour ---------- */
+// Shown once per browser (pace:tour). Each step highlights one or more elements.
+const TOUR=[
+  {title:'Welcome to Game Pace',
+   targets:['srcBar'],
+   body:'<p>This tool times the gap between the end of each play and the ready for play whistle, and builds the tempo figures for your IFAF review.</p><p>Start here: paste the YouTube link of the game and press Load video. Then set the <strong>Game start</strong> under the video so pregame footage is ignored.</p>'},
+  {title:'Measure every down',
+   targets:['measure'],
+   body:'<p>When a play ends, press <kbd>1</kbd> to <kbd>4</kbd> for the situation: Regular, After TD, After XP / COP or After Flag. Press <kbd>Enter</kbd> when you see the ready for play signal.</p><p>Time is taken from the video, so you can pause, rewind or watch at 2x and the result stays exact. <kbd>Esc</kbd> cancels.</p>'},
+  {title:'Tell it where you are',
+   targets:['halfBox','twoBox'],
+   body:'<p>Set the half with <kbd>H</kbd> and switch on the last two minutes tag with <kbd>T</kbd> when that stretch begins. Both apply to the next measurements and can be fixed later in the list.</p>'},
+  {title:'Paste into the review sheet',
+   targets:['logHead'],
+   body:'<p>Averages update live on the right. When you finish, copy the <strong>Game Tempo Log</strong> rows and, for plays worth a remark, the <strong>Game Review</strong> grade and comment.</p><p>Your work saves automatically in this browser.</p>'},
+  {title:'Backups and help',
+   targets:['btnAbout','btnBackup','btnRestore'], place:'below-right',
+   body:'<p>To keep a copy of a game or continue it on another computer, use <strong>Backup</strong> to download it and <strong>Load backup</strong> to restore it.</p><p>Any other question? Click <strong>How it works</strong> for the full guide. The <strong>Tour</strong> button shows this walkthrough again.</p>'}
+];
+let tourIdx=-1;
+const tourOpen=()=>!$('tour').hidden;
+function startTour(){
+  if(aboutOpen()){ history.replaceState(null,'',location.pathname+location.search); showAbout(false); }
+  if(run) cancelMeasure();
+  if(player && player.playing()) player.toggle();
+  $('tour').hidden=false; tourIdx=0; showTourStep(); $('tourNext').focus();
+}
+function endTour(){
+  $('tour').hidden=true; tourIdx=-1;
+  try{ localStorage.setItem('pace:tour','done'); }catch(e){}
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function tourRect(){
+  const els=TOUR[tourIdx].targets.map(id=>$(id)).filter(Boolean);
+  if(!els.length) return null;
+  const rs=els.map(e=>e.getBoundingClientRect());
+  const top=Math.min(...rs.map(r=>r.top)), left=Math.min(...rs.map(r=>r.left));
+  return {top, left, width:Math.max(...rs.map(r=>r.right))-left, height:Math.max(...rs.map(r=>r.bottom))-top};
+}
+function placeTour(){
+  if(!tourOpen()) return;
+  const r=tourRect(), spot=$('tourSpot'), card=$('tourCard'), pad=8, gap=18;
+  const vw=window.innerWidth, vh=window.innerHeight, cw=card.offsetWidth, ch=card.offsetHeight;
+  if(!r){ spot.classList.add('none'); card.style.left=(vw-cw)/2+'px'; card.style.top=(vh-ch)/2+'px'; return; }
+  spot.classList.remove('none');
+  Object.assign(spot.style,{top:r.top-pad+'px',left:r.left-pad+'px',width:r.width+pad*2+'px',height:r.height+pad*2+'px'});
+  let top, left;
+  if(TOUR[tourIdx].place==='below-right'){ top=r.top+r.height+pad+gap; left=r.left+r.width-cw; }
+  else if(r.left-pad-gap-cw>=12){ left=r.left-pad-gap-cw; top=r.top; }                       // left of target
+  else if(vw-(r.left+r.width+pad+gap)>=cw+12){ left=r.left+r.width+pad+gap; top=r.top; } // right of target
+  else if(vh-(r.top+r.height+pad+gap)>=ch+12){ top=r.top+r.height+pad+gap; left=r.left; } // below
+  else { top=r.top-pad-gap-ch; left=r.left; }                                             // above
+  card.style.left=Math.max(12,Math.min(left,vw-cw-12))+'px';
+  card.style.top=Math.max(12,Math.min(top,vh-ch-12))+'px';
+}
+function showTourStep(){
+  const st=TOUR[tourIdx];
+  $('tourStep').textContent='Step '+(tourIdx+1)+' of '+TOUR.length;
+  $('tourTitle').textContent=st.title; $('tourBody').innerHTML=st.body;
+  $('tourDots').innerHTML=TOUR.map((_,i)=>'<i class="'+(i===tourIdx?'on':'')+'"></i>').join('');
+  $('tourBack').hidden=tourIdx===0;
+  $('tourNext').textContent= tourIdx===TOUR.length-1 ? 'Start reviewing' : 'Next';
+  const first=$(st.targets[0]);
+  if(first){
+    const rr=first.getBoundingClientRect();
+    if(rr.top<0 || rr.bottom>window.innerHeight) first.scrollIntoView({block:'center'});
+  }
+  requestAnimationFrame(placeTour);
+}
+$('tourNext').onclick=()=>{ if(tourIdx<TOUR.length-1){ tourIdx++; showTourStep(); } else endTour(); };
+$('tourBack').onclick=()=>{ if(tourIdx>0){ tourIdx--; showTourStep(); } };
+$('tourSkip').onclick=endTour;
+$('btnTour').onclick=startTour;
+window.addEventListener('resize',placeTour);
+window.addEventListener('scroll',placeTour,{passive:true});
+document.addEventListener('keydown',e=>{
+  if(!tourOpen()) return;
+  if(e.key==='Escape'){ endTour(); }
+  else if(e.key==='ArrowRight' || (e.key==='Enter' && !e.target.closest('button'))){ $('tourNext').click(); }
+  else if(e.key==='ArrowLeft'){ $('tourBack').click(); }
+  else if(e.key!=='Tab') { e.preventDefault(); }
+  e.stopImmediatePropagation();
+},true);
+
+(()=>{ let seen=null; try{ seen=localStorage.getItem('pace:tour'); }catch(e){}
+  if(!seen && location.hash!=='#about') setTimeout(startTour, 400); })();
 
 /* keyboard */
 document.addEventListener('keydown',e=>{
